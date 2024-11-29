@@ -1,71 +1,172 @@
 %{
 #include "syn.tab.h"
-#include "TS.h"
+#include "ts.h"
 extern YYSTYPE yylval;
 extern int nb_ligne;
 extern int col;
 %}
+
 lettre [a-zA-Z]
 chiffre [0-9]
 idf {lettre}({lettre}|{chiffre})*
-cst [1-9][0-9]*|0 
+cst [+-]?([0-9]+(\.[0-9]*)?|\.[0-9]+)
+
 %%
-EXECUTION { 
-    insererTableDesSymboles("EXECUTION", 1);  // Mots-clés, code 1
-    return EXECUTION; 
+
+"FIXE" { 
+    insererMotCle("FIXE"); 
+    return FIXE; 
+}
+"SI" { 
+    insererMotCle("SI"); 
+    return SI; 
+}
+"ALORS" { 
+    insererMotCle("ALORS"); 
+    return ALORS; 
+}
+"SINON" { 
+    insererMotCle("SINON"); 
+    return SINON; 
+}
+"TANTQUE" { 
+    insererMotCle("TANTQUE"); 
+    return TANTQUE; 
+}
+"FAIRE" { 
+    insererMotCle("FAIRE"); 
+    return FAIRE; 
+}
+"affiche" { 
+    insererMotCle("affiche"); 
+    return AFFICHE; 
+}
+"lire" { 
+    insererMotCle("lire"); 
+    return LIRE; 
 }
 
-DEBUT { 
-    insererTableDesSymboles("DEBUT", 1);  // Mots-clés, code 1
+"<-" { 
+    insererOperateur("<-"); 
+    return ASSIGN; 
+}
+"==" { 
+    insererOperateur("=="); 
+    return EQ; 
+}
+"!=" { 
+    insererOperateur("!="); 
+    return NEQ; 
+}
+"<=" { 
+    insererOperateur("<="); 
+    return LE; 
+}
+">=" { 
+    insererOperateur(">="); 
+    return GE; 
+}
+"<" { 
+    insererOperateur("<"); 
+    return '<'; 
+}
+">" { 
+    insererOperateur(">"); 
+    return '>'; 
+}
+
+"ET" { 
+    insererOperateurLogique("ET");  
+    return ET; 
+}
+"OU" { 
+    insererOperateurLogique("OU");  
+    return OU; 
+}
+"NON" { 
+    insererOperateurLogique("NON"); 
+    return NON; 
+}
+
+"+" { 
+    insererOperateur("+"); 
+    return '+'; 
+}
+"-" { 
+    insererOperateur("-"); 
+    return '-'; 
+}
+"*" { 
+    insererOperateur("*"); 
+    return '*'; 
+}
+"/" { 
+    insererOperateur("/"); 
+    return '/'; 
+}
+
+"DEBUT" { 
+    insererMotCle("DEBUT"); 
     return DEBUT; 
 }
-
-FIN { 
-    insererTableDesSymboles("FIN", 1);  // Mots-clés, code 1
+"FIN" { 
+    insererMotCle("FIN"); 
     return FIN; 
 }
-
-Program { 
-    insererTableDesSymboles("Program", 1);  // Mots-clés, code 1
-    return prog; 
-} // Ces mots-clés ont un code 1
-
-TEXT { 
-    insererTableDesSymboles("TEXT", 4);  // Types, code 4
+"EXECUTION" { 
+    insererMotCle("EXECUTION"); 
+    return EXECUTION; 
+}
+"NUM" { 
+    insererType("NUM");  // Insertion dans la liste des types
+    return TYPE; 
+}
+"REAL" { 
+    insererType("REAL");  // Insertion dans la liste des types
+    return REAL; 
+}
+"TEXT" { 
+    insererType("TEXT");  // Insertion dans la liste des types
     return TEXT; 
 }
 
-NUM { 
-    insererTableDesSymboles("NUM", 4);  // Types, code 4
-    return NUM; 
-}
+"{" { return '{'; }
+"}" { return '}'; }
+"(" { return '('; }
+")" { return ')'; }
+"[" { return '['; }
+"]" { return ']'; }
+";" { return ';'; }
+":" { return ':'; }
+"," { return ','; }
 
-REAL { 
-    insererTableDesSymboles("REAL", 4);  // Types, code 4
-    return REAL; 
-} // Ces mots-clés sont des types et ont le code 4
-
-// Séparateurs et symboles
-[,;=/+}{] { 
-    return yytext[0]; // Retourne les séparateurs sans modification
-}
-
-// Constantes
 {cst} { 
-    yylval.entier = atoi(yytext);  // Convertit la constante en entier
-    insererTableDesSymboles(yytext, 3);  // Constantes, code 3
+    yylval.entier = atoi(yytext); 
+    insererConstante(yytext);  
     return cst; 
 }
 
-// Identifiants
-{idf}  { 
-    yylval.str = strdup(yytext);  // Copie le nom de l'identifiant
-    insererTableDesSymboles(yytext, 2);  // Identifiants, code 2
+{idf} { 
+    yylval.str = strdup(yytext); 
+    insererIdentifiant(yytext, "int"); 
     return idf; 
 }
 
-// Gestion des espaces blancs
-[ \t]  
-\n {nb_ligne++;col=1;}
-. {printf ("erreur lexical sur l'entite %s a la ligne %d a la colonne %d",yytext,nb_ligne,col); return err;}
+"int" { 
+    insererType("int"); 
+    return INT; 
+}
+"bool" { 
+    insererType("bool"); 
+    return BOOL; 
+}
+
+[ \t] 
+\n { nb_ligne++; col = 1; }
+
+. { 
+    printf("Erreur lexicale sur l'entité %s à la ligne %d à la colonne %d\n", yytext, nb_ligne, col); 
+    return err; 
+}
+
 %%
