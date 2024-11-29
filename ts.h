@@ -7,7 +7,11 @@
 extern YYSTYPE yylval;
 extern int nb_ligne;
 extern int col;
-
+typedef struct Identifiant {
+    char* nom;
+    char* type;
+    struct Identifiant* suivant;
+} Identifiant;
 typedef struct Symbole {
     char* texte;
     struct Symbole* suivant;
@@ -26,7 +30,15 @@ Symbole* listeOperateurs = NULL;
 Symbole* listeLogiques = NULL;
 Symbole* listeTypes = NULL;
 ListeBinaire* listeBinaire = NULL;
-
+void insererIdentifiant(char* nom, char* type) {
+    Identifiant* nouvelIdentifiant = (Identifiant*)malloc(sizeof(Identifiant));
+    if (nouvelIdentifiant) {
+        nouvelIdentifiant->nom = strdup(nom);
+        nouvelIdentifiant->type = strdup(type);
+        nouvelIdentifiant->suivant = listeIdentifiants;
+        listeIdentifiants = nouvelIdentifiant;
+    }
+}
 void insererDansListeBinaire(int code, const char* texte) {
     Symbole* nouveauSymbole = (Symbole*)malloc(sizeof(Symbole));
     if (nouveauSymbole) {
