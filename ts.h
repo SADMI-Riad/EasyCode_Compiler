@@ -2,7 +2,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include "syntax.tab.h"
-#include "ts.h"
 // extern YYSTYPE yylval;
 // extern int nb_ligne;
 // extern int col;
@@ -38,6 +37,7 @@ void insererIdentifiant(char* nom, char* type) {
         listeIdentifiants = nouvelIdentifiant;
     }
 }
+
 void insererCst(char* nom, char* type) {
     SymbT* nouvelIdentifiant = (SymbT*)malloc(sizeof(SymbT));
     if (nouvelIdentifiant) {
@@ -47,6 +47,7 @@ void insererCst(char* nom, char* type) {
         listeCst = nouvelIdentifiant;
     }
 }
+
 void insererDansListeBinaire(int code, const char* texte) {
     Symbole* nouveauSymbole = (Symbole*)malloc(sizeof(Symbole));
     if (nouveauSymbole) {
