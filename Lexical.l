@@ -142,12 +142,12 @@ cstint [+-]?[0-9]+
 
 {cstint} { 
     yylval.entier = atoi(yytext); 
-    return cst; 
+    return cstint; 
 }
 
 {cstflt} { 
-    yylval.reel = atoi(yytext); 
-    return cst; 
+    yylval.reel = atof(yytext); 
+    return cstflt; 
 }
 
 {idf} { 
@@ -159,7 +159,7 @@ cstint [+-]?[0-9]+
         return idf;
     }
 }
-\"[^\"]*\" { yylval.strVal = strdup(yytext); return TEXTV; }
+\"[^\"]*\" { yylval.str = strdup(yytext); return TEXTV; }
 
 [ \t] 
 \n { nb_ligne++; col = 1; }
