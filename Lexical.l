@@ -1,5 +1,5 @@
 %{
-#include "syn.tab.h"
+#include "syntax.tab.h"
 #include "ts.h"
 extern YYSTYPE yylval;
 extern int nb_ligne;
@@ -9,8 +9,8 @@ extern int col;
 lettre [a-zA-Z]
 chiffre [0-9]
 idf {lettre}({lettre}|{chiffre})*
-cst [+-]?([0-9]+(\.[0-9]*)?|\.[0-9]+)
-
+cstflt [+-]?([0-9]+(\.[0-9]*)?|\.[0-9]+)
+cstint [+-]?[0-9]+
 %%
 
 "FIXE" { 
@@ -118,15 +118,15 @@ cst [+-]?([0-9]+(\.[0-9]*)?|\.[0-9]+)
     return EXECUTION; 
 }
 "NUM" { 
-    insererType("NUM");  // Insertion dans la liste des types
+    insererType("NUM");  
     return TYPE; 
 }
 "REAL" { 
-    insererType("REAL");  // Insertion dans la liste des types
+    insererType("REAL");  
     return REAL; 
 }
 "TEXT" { 
-    insererType("TEXT");  // Insertion dans la liste des types
+    insererType("TEXT");  
     return TEXT; 
 }
 
@@ -140,26 +140,26 @@ cst [+-]?([0-9]+(\.[0-9]*)?|\.[0-9]+)
 ":" { return ':'; }
 "," { return ','; }
 
-{cst} { 
+{cstint} { 
     yylval.entier = atoi(yytext); 
-    insererConstante(yytext);  
+    return cst; 
+}
+
+{cstflt} { 
+    yylval.reel = atoi(yytext); 
     return cst; 
 }
 
 {idf} { 
-    yylval.str = strdup(yytext); 
-    insererIdentifiant(yytext, "int"); 
-    return idf; 
+    if (strlen(yytext) > 10) {
+        printf("Erreur lexicale : l'identifiant '%s' dépasse la limite de 10 caractères à la ligne %d, colonne %d\n", yytext, nb_ligne, col);
+        return err; 
+    } else {
+        yylval.str = strdup(yytext);
+        return idf;
+    }
 }
-
-"int" { 
-    insererType("int"); 
-    return INT; 
-}
-"bool" { 
-    insererType("bool"); 
-    return BOOL; 
-}
+\"[^\"]*\" { yylval.strVal = strdup(yytext); return TEXTV; }
 
 [ \t] 
 \n { nb_ligne++; col = 1; }

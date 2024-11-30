@@ -7,11 +7,11 @@
 extern YYSTYPE yylval;
 extern int nb_ligne;
 extern int col;
-typedef struct Identifiant {
+typedef struct SymbT {
     char* nom;
     char* type;
-    struct Identifiant* suivant;
-} Identifiant;
+    struct SymbT* suivant;
+} SymbT;
 typedef struct Symbole {
     char* texte;
     struct Symbole* suivant;
@@ -23,20 +23,29 @@ typedef struct ListeBinaire {
     struct ListeBinaire* suivant;
 } ListeBinaire;
 
-Identifiant* listeIdentifiants = NULL;
+SymbT* listeIdentifiants = NULL;
+SymbT* listeCst = NULL;
 Symbole* listeMotsCles = NULL;
-Symbole* listeConstantes = NULL;
 Symbole* listeOperateurs = NULL;
 Symbole* listeLogiques = NULL;
 Symbole* listeTypes = NULL;
 ListeBinaire* listeBinaire = NULL;
 void insererIdentifiant(char* nom, char* type) {
-    Identifiant* nouvelIdentifiant = (Identifiant*)malloc(sizeof(Identifiant));
+    SymbT* nouvelIdentifiant = (SymbT*)malloc(sizeof(SymbT));
     if (nouvelIdentifiant) {
         nouvelIdentifiant->nom = strdup(nom);
         nouvelIdentifiant->type = strdup(type);
         nouvelIdentifiant->suivant = listeIdentifiants;
         listeIdentifiants = nouvelIdentifiant;
+    }
+}
+void insererCst(char* nom, char* type) {
+    SymbT* nouvelIdentifiant = (SymbT*)malloc(sizeof(SymbT));
+    if (nouvelIdentifiant) {
+        nouvelIdentifiant->nom = strdup(nom);
+        nouvelIdentifiant->type = strdup(type);
+        nouvelIdentifiant->suivant = listeCst;
+        listeCst = nouvelIdentifiant;
     }
 }
 void insererDansListeBinaire(int code, const char* texte) {
@@ -67,18 +76,15 @@ void insererMotCle(const char* motCle) {
     insererDansListeBinaire(1, motCle);
 }
 
-void insererConstante(const char* constante) {
-    insererDansListeBinaire(2, constante);
-}
 
 void insererOperateur(const char* operateur) {
-    insererDansListeBinaire(3, operateur);
+    insererDansListeBinaire(2, operateur);
 }
 
 void insererOperateurLogique(const char* operateurLogique) {
-    insererDansListeBinaire(4, operateurLogique);
+    insererDansListeBinaire(3, operateurLogique);
 }
 
 void insererType(const char* type) {
-    insererDansListeBinaire(5, type);
+    insererDansListeBinaire(4, type);
 }
