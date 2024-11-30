@@ -2,13 +2,13 @@
 #include "syntax.tab.h"
 #include "ts.h"
 extern YYSTYPE yylval;
-extern int nb_ligne;
-extern int col;
+int nb_ligne;
+int col;
 %}
 
 lettre [a-zA-Z]
 chiffre [0-9]
-idf {lettre}({lettre}|{chiffre})*
+idf {lettre}({lettre}|{chiffre}|_)*
 cstflt [+-]?([0-9]+(\.[0-9]*)?|\.[0-9]+)
 cstint [+-]?[0-9]+
 %%
@@ -50,8 +50,8 @@ cstint [+-]?[0-9]+
     insererOperateur("<-"); 
     return ASSIGN; 
 }
-"==" { 
-    insererOperateur("=="); 
+"=" { 
+    insererOperateur("="); 
     return EQ; 
 }
 "!=" { 
@@ -119,7 +119,7 @@ cstint [+-]?[0-9]+
 }
 "NUM" { 
     insererType("NUM");  
-    return TYPE; 
+    return NUM; 
 }
 "REAL" { 
     insererType("REAL");  
@@ -153,20 +153,20 @@ cstint [+-]?[0-9]+
 {idf} { 
     if (strlen(yytext) > 10) {
         printf("Erreur lexicale : l'identifiant '%s' dépasse la limite de 10 caractères à la ligne %d, colonne %d\n", yytext, nb_ligne, col);
-        return err; 
+        return -1; 
     } else {
         yylval.str = strdup(yytext);
         return idf;
     }
 }
-\"[^\"]*\" { yylval.str = strdup(yytext); return TEXTV; }
+\"[^\"]*\" { yylval.strv = strdup(yytext); return TEXTV; }
 
 [ \t] 
 \n { nb_ligne++; col = 1; }
 
 . { 
     printf("Erreur lexicale sur l'entité %s à la ligne %d à la colonne %d\n", yytext, nb_ligne, col); 
-    return err; 
+    return -1; 
 }
 
 %%

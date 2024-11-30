@@ -1,12 +1,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "syn.tab.h"
+#include "syntax.tab.h"
 #include "ts.h"
-
-extern YYSTYPE yylval;
-extern int nb_ligne;
-extern int col;
+// extern YYSTYPE yylval;
+// extern int nb_ligne;
+// extern int col;
 typedef struct SymbT {
     char* nom;
     char* type;
@@ -75,7 +74,6 @@ void insererDansListeBinaire(int code, const char* texte) {
 void insererMotCle(const char* motCle) {
     insererDansListeBinaire(1, motCle);
 }
-
 
 void insererOperateur(const char* operateur) {
     insererDansListeBinaire(2, operateur);
