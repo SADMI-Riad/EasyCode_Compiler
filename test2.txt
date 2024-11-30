@@ -1,0 +1,46 @@
+DEBUT
+NUM : age
+REAL : salaire
+FIXE NUM : MAX_AGE = 65
+FIXE NUM : MIN_AGE = 18
+EXECUTION {
+    affiche("Entrez votre âge :")
+    lire(age)
+    
+    SI (age < MIN_AGE) ALORS {
+        affiche("Vous êtes trop jeune pour travailler.")
+    }
+    SINON {
+        SI (age < MAX_AGE) ALORS {
+            affiche("Vous pouvez encore travailler.")
+            salaire <- 2000
+            affiche("Votre salaire estimé est : ", salaire)
+        }
+        SINON {
+            affiche("Vous êtes en âge de retraite.")
+            salaire <- 1000
+            affiche("Votre pension estimée est : ", salaire)
+        }
+    }
+    
+    compteur <- 0
+    TANTQUE (compteur < 5) FAIRE {
+        affiche("Compteur TANTQUE : ", compteur)
+        
+        TANTQUE (compteur < 3) FAIRE {
+            affiche("Compteur interne : ", compteur)
+            compteur <- compteur + 1
+        }
+        
+        compteur <- compteur + 1
+    }
+    
+
+    SI (compteur >= 5) ALORS {
+        affiche("Le compteur a atteint ou dépassé 5.")
+    }
+    SINON {
+        affiche("Le compteur est inférieur à 5.")
+    }
+}
+FIN
