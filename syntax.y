@@ -2,30 +2,48 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "syntax.tab.h"
+#include "ts1.h"
 extern int yylex(void); 
+extern int nb_ligne;
+extern int col;
 extern void yyerror(const char *s);
 extern int yylineno;  
-extern char *yytext;  
-%}
+extern char *yytext; 
 
+%}
 %union {
     int entier; 
     float reel; 
     char *str; 
     char *strv;
+    void *vide;
+    struct listeD *symbole;
+    struct listeT *symbol;
 }
-
 %token DEBUT FIN EXECUTION FIXE
 %token SI ALORS SINON TANTQUE FAIRE AFFICHE LIRE
-%token <str> ASSIGN <str> EQ <str> NEQ <str> LE <str> GE <str> ET <str> OU <str> NON
-%token <entier> cstflt    
-%token <reel> cstint  
+
+%token <str> ASSIGN
+%token <str> EQ
+%token <str> NEQ
+%token <str> LE
+%token <str> GE
+%token <str> ET
+%token <str> OU
+%token <str> NON
+
+%token <reel> cstflt    
+%token <entier> cstint  
 %token <str> idf       
 %token <strv> TEXTV     
 
 %token NUM REAL TEXT   
+
 %type <str> type
+%type <symbole> var_list
+%type <symbol> var_list2
+%type <symbole>const_declaration
+%type <vide>constant_value
 
 %left OU
 %left ET
@@ -36,223 +54,176 @@ extern char *yytext;
 %start program
 
 %%
-
+    
 program:
     DEBUT declarations EXECUTION block FIN
-    {
-        printf("Analyse syntaxique réussie - Program\n");
-    }
     ;
 
 declarations:
     declarations declaration
-    {
-        printf("Déclaration trouvée\n");
-    }
     | /* Epsilon */
-    {
-        printf("Fin des déclarations\n");
-    }
     ;
 
 declaration:
-    type ':' var_list 
-    {
-        printf("Déclaration de variables : \n");
+    type ':' var_list {
+        struct listeD *var;
+        for (var = $3; var != NULL; var = var->suivant) {
+            insererTS(var->entite, $1, 0,&(var->valeur));  
+        }
+    } 
+    | type ':' var_list2 {
+        struct listeT *var;
+        for (var=$3 ; var != NULL; var=var->suivant){
+            insererTableau(var->entite,$1,var->taille,&(var->valeur));
+        }
     }
-    | FIXE type ':' const_declaration 
-    {
-        printf("Déclaration constante :\n");
+    | FIXE type ':' const_declaration {
+        listeD *var;
+        for (var = $4; var != NULL; var = var->suivant) {
+            insererTS(var->entite, $2,1,&(var->valeur)); 
+        }
     }
     ;
 
 type:
-    NUM    { $$ = strdup("NUM"); printf("Type NUM\n"); }
-    | REAL { $$ = strdup("REAL"); printf("Type REAL\n"); }
-    | TEXT { $$ = strdup("TEXT"); printf("Type TEXT\n"); }
+    NUM    { $$ = strdup("NUM");}
+    | REAL { $$ = strdup("REAL");}
+    | TEXT { $$ = strdup("TEXT");}
     ;
-
 var_list:
-    var_list ',' idf
-    {
-        printf("Liste de variables :\n");
+    var_list ',' idf {
+        struct listeD *new_var = (struct listeD*)malloc(sizeof(struct listeD)); 
+        strcpy(new_var->entite, $3);
+        new_var->is_const = 0;
+        new_var->suivant = $1;
+        $$ = new_var;
     }
-    | idf
-    {
-        printf("Variable :\n");
+    | idf {
+        struct listeD *new_var = (struct listeD*)malloc(sizeof(struct listeD));
+        strcpy(new_var->entite, $1);
+        new_var->is_const = 0; 
+        new_var->suivant = NULL; 
+        $$ = new_var;
     }
-    ;
+;
+var_list2 :
+    var_list2 ',' idf '[' cstint ']' {
+        struct listeT *new_var = (struct listeT*)malloc(sizeof(struct listeT)); 
+        strcpy(new_var->entite, $3);
+        new_var->taille = $5;
+        new_var->suivant = $1;
+        $$ = new_var;
+    }
+    | idf '[' cstint ']' {
+        struct listeT *new_var = (struct listeT*)malloc(sizeof(struct listeT));
+        strcpy(new_var->entite, $1);
+        new_var->taille = $3;
+        new_var->suivant = NULL; 
+        $$ = new_var;
+    }
 
 const_declaration:
     idf EQ constant_value
     {
-        printf("Déclaration constante : \n");
+        struct listeD *new_var = (struct listeD*)malloc(sizeof(struct listeD));
+        strcpy(new_var->entite,$1);
+        new_var->valeur=$3;
+        new_var->suivant=NULL;
+        $$ = new_var;
+    }
+    |idf EQ TEXTV 
+    {
+
     }
     ;
 
 constant_value:
-    cstint { printf("Valeur constante : \n"); }
-    | cstflt { printf("Valeur constante : \n"); }
-    | TEXTV { printf("Valeur constante : \n"); }
+    cstint
+    | cstflt
+    | TEXTV
     ;
 
 block:
     '{' statements '}'
-    {
-        printf("Début du bloc de code\n");
-    }
     ;
 
 statements:
     statements statement
-    {
-        printf("Déclaration de statement\n");
-    }
     | /* Epsilon */
-    {
-        printf("Fin des instructions\n");
-    }
     ;
 
 statement:
     assignment 
-    {
-        printf("Affectation trouvée\n");
-    }
     | conditional
-    {
-        printf("Conditionnelle trouvée\n");
-    }
     | loop
-    {
-        printf("Boucle trouvée\n");
-    }
     | io_statement
-    {
-        printf("Instruction d'entrée/sortie trouvée\n");
-    }
     ;
 
 assignment:
-    idf ASSIGN expression
-    {
-        printf("Affectation :\n");
+    idf ASSIGN expression 
+    | idf ASSIGN cstint {
+        // Vérification de type à implémenter
     }
+    | idf ASSIGN cstflt {
+        // Vérification de type à implémenter
+    }
+    | idf ASSIGN TEXTV
+    | idf '[' cstint ']' ASSIGN expression
+    ;
+
+division:
+    cstflt '/' cstflt {} 
+    | cstint '/' cstint {} 
+    | cstint '/' cstflt {} 
+    | cstflt '/' cstint {} 
+    | idf '/' idf 
     ;
 
 expression:
     expression '+' expression 
-    {
-        printf("Expression addition :\n");
-    }
     | expression '-' expression
-    {
-        printf("Expression soustraction :\n");
-    }
     | expression '*' expression
-    {
-        printf("Expression multiplication :\n");
-    }
-    | expression '/' expression 
-    {
-        printf("Expression division :\n");
-    }
+    | division
     | '(' expression ')'
-    {
-        printf("Expression entre parenthèses\n");
-    }
     | idf
-    {
-        printf("Identifiant :\n");
-    }
     | cstint
-    {
-        printf("Constante entière :\n");
-    }
     | cstflt
-    {
-        printf("Constante flottante :\n");
-    }
+    | idf '['cstint']'
     ;
 
 conditional:
     SI '(' condition ')' ALORS block SINON block
-    {
-        printf("Condition SI\n");
-    }
     ;
 
 loop:
     TANTQUE '(' condition ')' FAIRE block
-    {
-        printf("Boucle TANTQUE\n");
-    }
     ;
 
 condition:
     expression '<' expression
-    {
-        printf("Condition inférieure :\n");
-    }
     | expression '>' expression
-    {
-        printf("Condition supérieure :\n ");
-    }
     | expression LE expression
-    {
-        printf("Condition inférieure ou égale :\n ");
-    }
     | expression GE expression
-    {
-        printf("Condition supérieure ou égale : \n");
-    }
     | expression EQ expression
-    {
-        printf("Condition égalité : \n");
-    }
     | expression NEQ expression
-    {
-        printf("Condition inégalité :\n");
-    }
     | condition ET condition
-    {
-        printf("Condition ET :\n");
-    }
     | condition OU condition
-    {
-        printf("Condition OU : \n");
-    }
     | NON condition
-    {
-        printf("Condition NON\n");
-    }
     ;
 
 io_statement:
     AFFICHE '(' io_args ')'
-    {
-        printf("Instruction AFFICHE\n");
-    }
     | LIRE '(' idf ')'
-    {
-        printf("Instruction LIRE\n");
-    }
+    | LIRE '(' idf '['cstint']' ')'
     ;
 
 io_args:
     io_args ',' expression
-    {
-        printf("Arguments d'IO :\n ");
-    }
     | expression 
-    {
-        printf("Argument d'IO : \n");
-    }
     | TEXTV
     ;
 
 %%
-
 void yyerror(const char *s) {
     extern int yylineno;
     extern char *yytext;
@@ -262,6 +233,8 @@ void yyerror(const char *s) {
 int main() {
     if (yyparse() == 0) {  
         printf("Analyse syntaxique réussie\n");
+        /* afficherTS();
+        afficherTStab(); */
     } else {  
         printf("Erreur d'analyse syntaxique\n");
     }
