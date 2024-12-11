@@ -9,7 +9,7 @@ int col;
 lettre [a-zA-Z]
 chiffre [0-9]
 idf {lettre}({lettre}|{chiffre}|_)*
-cstflt [+-]?([0-9]+(\.[0-9]*)?|\.[0-9]+)
+cstflt ^[+-]?\d+\.\d+$ // [+-]?([0-9]+(\.[0-9]*)?|\.[0-9]+)
 cstint [+-]?[0-9]+
 %%
 
@@ -160,6 +160,8 @@ cstint [+-]?[0-9]+
     }
 }
 \"[^\"]*\" { yylval.strv = strdup(yytext); return TEXTV; }
+--.*?## { yylval.strvc = strdup(yytext); return COMMENT; }
+\{ -([\s\S]*?)\s?- \} { yylval.strvcm = strdup(yytext); return COMMENTM; }
 
 [ \t] 
 \n { nb_ligne++; col = 1; }
