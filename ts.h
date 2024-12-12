@@ -79,6 +79,7 @@ int insererTableau(char entite[], char type[], int taille, void *valeur) {
     {
         return -1;
     }
+
     listeT *nouveau = (listeT *)malloc(sizeof(listeT));
     if (nouveau) {
         strcpy(nouveau->entite, entite);
@@ -91,11 +92,20 @@ int insererTableau(char entite[], char type[], int taille, void *valeur) {
             nouveau->valeur.f = *(float *)valeur; 
         }
         else if (strcmp(type, "TEXT") == 0) {
-            nouveau->valeur.s = (char *)malloc(strlen((char *)valeur) +1);
-            if (nouveau->valeur.s) {
-                strcpy(nouveau->valeur.s, (char *)valeur); 
+            char **str_ptr = (char**)valeur; 
+            if (str_ptr && *str_ptr) {  
+                size_t len = strlen(*str_ptr);
+                nouveau->valeur.s = (char *)malloc(len + 1);
+                if (nouveau->valeur.s) 
+                {
+                    strcpy(nouveau->valeur.s, *str_ptr);
+                }
+            }   else {
+                    fprintf(stderr, "Erreur : Pointeur de chaîne invalide pour '%s'\n", entite);
+                    free(nouveau);
+                    return -1;
             }
-        } 
+}
         nouveau->suivant = TStab;
         TStab = nouveau;
     } else {
@@ -137,13 +147,8 @@ int insererTS(char entite[], char type[], int is_const, void *valeur) {
                 if (nouveau->valeur.s) 
                 {
                     strcpy(nouveau->valeur.s, *str_ptr);
-                    printf("Chaîne copiée : %s\n", nouveau->valeur.s);
                 }
-            }   else {
-                    fprintf(stderr, "Erreur : Pointeur de chaîne invalide pour '%s'\n", entite);
-                    free(nouveau);
-                    return -1;
-            }
+            }  
 }
         nouveau->suivant = TS;
         TS = nouveau;
@@ -201,96 +206,6 @@ void insererOperateurNoAsso(char tete[])
     }
 }
 
-// Fonction d'affichage unifiée pour toutes les listes
-void afficher()
-{
-    // Affichage de la liste des mots-clés
-    printf("\nListe des mots-clés :\n");
-    liste *current = ListeMotCle;
-    while (current != NULL)
-    {
-        printf("%s\n", current->entite);
-        current = current->suivant;
-    }
-
-    // Affichage de la liste des opérateurs logiques
-    printf("\nListe des opérateurs logiques :\n");
-    current = ListeOperateurLogique;
-    while (current != NULL)
-    {
-        printf("%s\n", current->entite);
-        current = current->suivant;
-    }
-
-    // Affichage de la liste des opérateurs arithmétiques
-    printf("\nListe des opérateurs arithmétiques :\n");
-    current = ListeOperateurArithmetique;
-    while (current != NULL)
-    {
-        printf("%s\n", current->entite);
-        current = current->suivant;
-    }
-
-    // Affichage de la liste des opérateurs non-associatifs
-    printf("\nListe des opérateurs non-associatifs :\n");
-    current = ListeOperateurNoAsso;
-    while (current != NULL)
-    {
-        printf("%s\n", current->entite);
-        current = current->suivant;
-    }
-}
-
-void afficherTS() {
-    printf("\n/*************** Table des Symboles ******************/\n");
-    printf("_____________________________________________________\n");
-    printf("\t| Entite | Type | Constante | Valeur |\n");
-    printf("_____________________________________________________\n");
-
-    listeD *current = TS;         
-    while (current != NULL) {
-        printf("\t| %-6s | %-4s | %-9s | ", current->entite, current->type, current->is_const ? "Oui" : "Non");
-        if (strcmp(current->type, "NUM") == 0) {
-            printf("%-6d |\n", current->valeur.i);
-        } 
-        else if (strcmp(current->type, "REAL") == 0) {
-            printf("%-6.2f |\n", current->valeur.f); 
-        } 
-        else if (strcmp(current->type, "TEXT") == 0) {
-            printf("%-1s |\n", current->valeur.s);  
-        } 
-        else {
-            printf("Inconnu |\n"); 
-        }
-
-        current = current->suivant;
-    }
-}
-void afficherTStab() {
-    printf("\n/*************** Table des Symboles ******************/\n");
-    printf("_____________________________________________________\n");
-    printf("\t| Entite | Type | Taille | Valeur |\n");
-    printf("_____________________________________________________\n");
-
-    listeT *current = TStab;
-    while (current != NULL) {
-        printf("\t| %-6s | %-4s | %-9d | ", current->entite, current->type, current->taille);
-        if (strcmp(current->type, "NUM") == 0) {
-            printf("%-6d |\n", current->valeur.i); 
-        } 
-        else if (strcmp(current->type, "REAL") == 0) {
-            printf("%-6.2f |\n", current->valeur.f); 
-        } 
-        else if (strcmp(current->type, "TEXT") == 0) {
-            printf("%-6s |\n", current->valeur.s); 
-        } 
-        else {
-            printf("Inconnu |\n");
-        }
-
-        current = current->suivant;
-    }
-}
 struct listeD *chercherTS(char nom[]) 
 {
     struct listeD *current = TS;  
@@ -304,23 +219,6 @@ struct listeD *chercherTS(char nom[])
     }
     return NULL; 
 }
-char *chercherType(char nom[]) {
-    listeD *currentD = TS;
-    while (currentD != NULL) {
-        if (strcmp(currentD->entite, nom) == 0) {
-            return currentD->type;  
-        }
-        currentD = currentD->suivant;
-    }
-    listeT *currentT = TStab;
-    while (currentT != NULL) {
-        if (strcmp(currentT->entite, nom) == 0) {
-            return currentT->type; 
-        }
-        currentT = currentT->suivant;
-    }
-    return NULL;  
-}
 int rechercherTaille(char tete[]) 
 {
     listeT *current=TStab;
@@ -328,41 +226,85 @@ int rechercherTaille(char tete[])
     {
         if(strcmp(current->entite,tete)==0)
         {
-            printf("hello");
             return current->taille;
         }
         current = current->suivant;
     }
     return -1;
 }
-int is_constant(char nom[])
-{
-    listeD *current = TS; 
-    while (current != NULL)
-    {
-        if(strcmp(current->entite,nom)==0)
-        {
-            return current->is_const;
+void afficherListe(const char* titre, liste* tete) {
+        printf("╔═══════════════ %s ═══════════════╗\n", titre);
+        printf("║                                              ║\n");
+        liste* current = tete;
+        while (current != NULL) {
+            printf("║ %-44s ║\n", current->entite);
+            current = current->suivant;
         }
+        printf("║                                              ║\n");
+        printf("╚══════════════════════════════════════════════╝\n\n");
     }
-    return -1;
-}
-float chercherValeur(char nom[])
-{
+
+void afficherToutesLesTablesSymboles() {
+    printf("\n╔════════════════════════════════════════════════════════════════╗\n");
+    printf("║                    Tables des Symboles                         ║\n");
+    printf("╚════════════════════════════════════════════════════════════════╝\n\n");
+
+    afficherListe("Mots-clés", ListeMotCle);
+    afficherListe("Opérateurs logiques", ListeOperateurLogique);
+    afficherListe("Opérateurs arithmétiques", ListeOperateurArithmetique);
+    afficherListe("Opérateurs non-associatifs", ListeOperateurNoAsso);
+
+    printf("╔═══════════════ Table des Symboles principale ═══════════════╗\n");
+    printf("║                                                            ║\n");
+    printf("║ %-15s │ %-10s │ %-10s │ %-15s ║\n", "Entité", "Type", "Constante", "Valeur");
+    printf("╟───────────────────┼────────────┼────────────┼─────────────────╢\n");
+    
     listeD *current = TS;
-    while (current != NULL)
-    {
-        if(strcmp(current->entite,nom)==0)
-        {
-            if(strcmp(current->type,"REAL")==0)
-            {
-                return (float) current->valeur.i;
-            }
-            else if(strcmp(current->type,"REAL")==0)
-            {
-                return  current->valeur.f;
-            }
+    while (current != NULL) {
+        printf("║ %-15s │ %-10s │ %-10s │ ", 
+               current->entite, 
+               current->type, 
+               current->is_const ? "Oui" : "Non");
+        
+        if (strcmp(current->type, "NUM") == 0) {
+            printf("%-15d ║\n", current->valeur.i);
+        } else if (strcmp(current->type, "REAL") == 0) {
+            printf("%-15.2f ║\n", current->valeur.f);
+        } else if (strcmp(current->type, "TEXT") == 0) {
+            printf("%-15s ║\n", current->valeur.s);
+        } else {
+            printf("%-15s ║\n", "Inconnu");
         }
+        
+        current = current->suivant;
     }
-    return -1;
+    printf("║                                                            ║\n");
+    printf("╚════════════════════════════════════════════════════════════╝\n\n");
+
+    printf("╔═══════════════ Table des Tableaux ═══════════════╗\n");
+    printf("║                                                  ║\n");
+    printf("║ %-15s │ %-10s │ %-10s │ %-6s ║\n", "Entité", "Type", "Taille", "Valeur");
+    printf("╟───────────────────┼────────────┼────────────┼────────╢\n");
+    
+    listeT *currentT = TStab;
+    while (currentT != NULL) {
+        printf("║ %-15s │ %-10s │ %-10d │ ", 
+               currentT->entite, 
+               currentT->type, 
+               currentT->taille);
+        
+        if (strcmp(currentT->type, "NUM") == 0) {
+            printf("%-6d ║\n", currentT->valeur.i);
+        } else if (strcmp(currentT->type, "REAL") == 0) {
+            printf("%-6.2f ║\n", currentT->valeur.f);
+        } else if (strcmp(currentT->type, "TEXT") == 0) {
+            printf("%-6s ║\n", currentT->valeur.s);
+        } else {
+            printf("%-6s ║\n", "Inconnu");
+        }
+        
+        currentT = currentT->suivant;
+    }
+    printf("║                                                  ║\n");
+    printf("╚══════════════════════════════════════════════════╝\n");
 }
