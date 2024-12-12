@@ -1,6 +1,6 @@
 %{
 #include "syntax.tab.h"
-#include "ts1.h"
+#include "ts.h"
 extern YYSTYPE yylval;
 int nb_ligne=1;
 int col=1;

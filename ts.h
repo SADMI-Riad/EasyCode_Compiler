@@ -79,14 +79,6 @@ int insererTableau(char entite[], char type[], int taille, void *valeur) {
     {
         return -1;
     }
-    // while (current != NULL) {
-    //     if (strcmp(current->entite, entite) == 0) {
-    //         fprintf(stderr, "Erreur: Le symbole '%s' est déjà déclaré.\n", entite);
-    //         exit(1);
-    //     }
-    //     current = current->suivant;
-    // }
-
     listeT *nouveau = (listeT *)malloc(sizeof(listeT));
     if (nouveau) {
         strcpy(nouveau->entite, entite);
