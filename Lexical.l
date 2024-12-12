@@ -2,14 +2,14 @@
 #include "syntax.tab.h"
 #include "ts.h"
 extern YYSTYPE yylval;
-int nb_ligne;
-int col;
+int nb_ligne=1;
+int col=1;
 %}
 
 lettre [a-zA-Z]
 chiffre [0-9]
 idf {lettre}({lettre}|{chiffre}|_)*
-cstflt ^[+-]?\d+\.\d+$ // [+-]?([0-9]+(\.[0-9]*)?|\.[0-9]+)
+cstflt  [+-]?([0-9]*\.[0-9]+|[0-9]+\.) 
 cstint [+-]?[0-9]+
 %%
 
@@ -142,7 +142,7 @@ cstint [+-]?[0-9]+
 
 {cstint} { 
     yylval.entier = atoi(yytext); 
-    return cstint; 
+    return cstint; // il ne faut pas qu il soit dans l intervalle [-32768 a 32767]
 }
 
 {cstflt} { 
@@ -160,10 +160,10 @@ cstint [+-]?[0-9]+
     }
 }
 \"[^\"]*\" { yylval.strv = strdup(yytext); return TEXTV; }
---.*?## { yylval.strvc = strdup(yytext); return COMMENT; }
-\{ -([\s\S]*?)\s?- \} { yylval.strvcm = strdup(yytext); return COMMENTM; }
+--.*?## { yylval.str = strdup(yytext); return COMMENT; }
+{-([^-]|-[^}])*-} { yylval.str = strdup(yytext); return COMMENTM; }
 
-[ \t] 
+[ \t] {col++;}
 \n { nb_ligne++; col = 1; }
 
 . { 
