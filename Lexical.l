@@ -1,6 +1,6 @@
 %{
 #include "syntax.tab.h"
-#include "ts.h"
+#include "ts1.h"
 extern YYSTYPE yylval;
 int nb_ligne=1;
 int col=1;
@@ -9,8 +9,9 @@ int col=1;
 lettre [a-zA-Z]
 chiffre [0-9]
 idf {lettre}({lettre}|{chiffre}|_)*
-cstflt  [+-]?([0-9]*\.[0-9]+|[0-9]+\.) 
+cstflt [+-]?([0-9]*\.[0-9]+|[0-9]+\.) 
 cstint [+-]?[0-9]+
+
 %%
 
 "FIXE" { 
@@ -47,31 +48,31 @@ cstint [+-]?[0-9]+
 }
 
 "<-" { 
-    insererOperateur("<-"); 
+    insererOperateurNoAsso("<-"); 
     return ASSIGN; 
 }
 "=" { 
-    insererOperateur("="); 
+    insererOperateurNoAsso("="); 
     return EQ; 
 }
 "!=" { 
-    insererOperateur("!="); 
+    insererOperateurNoAsso("!="); 
     return NEQ; 
 }
 "<=" { 
-    insererOperateur("<="); 
+    insererOperateurNoAsso("<="); 
     return LE; 
 }
 ">=" { 
-    insererOperateur(">="); 
+    insererOperateurNoAsso(">="); 
     return GE; 
 }
 "<" { 
-    insererOperateur("<"); 
+    insererOperateurNoAsso("<"); 
     return '<'; 
 }
 ">" { 
-    insererOperateur(">"); 
+    insererOperateurNoAsso(">"); 
     return '>'; 
 }
 
@@ -89,19 +90,19 @@ cstint [+-]?[0-9]+
 }
 
 "+" { 
-    insererOperateur("+"); 
+    insererOperateurArithmetique("+"); 
     return '+'; 
 }
 "-" { 
-    insererOperateur("-"); 
+    insererOperateurArithmetique("-"); 
     return '-'; 
 }
 "*" { 
-    insererOperateur("*"); 
+    insererOperateurArithmetique("*"); 
     return '*'; 
 }
 "/" { 
-    insererOperateur("/"); 
+    insererOperateurArithmetique("/"); 
     return '/'; 
 }
 
@@ -118,15 +119,12 @@ cstint [+-]?[0-9]+
     return EXECUTION; 
 }
 "NUM" { 
-    insererType("NUM");  
     return NUM; 
 }
 "REAL" { 
-    insererType("REAL");  
     return REAL; 
 }
 "TEXT" { 
-    insererType("TEXT");  
     return TEXT; 
 }
 
@@ -141,9 +139,14 @@ cstint [+-]?[0-9]+
 "," { return ','; }
 
 {cstint} { 
-    yylval.entier = atoi(yytext); 
-    return cstint; // il ne faut pas qu il soit dans l intervalle [-32768 a 32767]
-}
+    yylval.entier = atoi(yytext);
+    if (yylval.entier < -32767 || yylval.entier > 32767) {
+        printf("entier en dehors de cet intervalle [-32767, 32767]\n");
+        return -1;
+    }
+    return cstint;
+} 
+
 
 {cstflt} { 
     yylval.reel = atof(yytext); 
@@ -151,7 +154,7 @@ cstint [+-]?[0-9]+
 }
 
 {idf} { 
-    if (strlen(yytext) > 10) {
+    if (strlen(yytext) > 20) {
         printf("Erreur lexicale : l'identifiant '%s' dépasse la limite de 10 caractères à la ligne %d, colonne %d\n", yytext, nb_ligne, col);
         return -1; 
     } else {
@@ -159,12 +162,24 @@ cstint [+-]?[0-9]+
         return idf;
     }
 }
+\n { nb_ligne++; col = 1; }
+[ \t] {col++;}
+
 \"[^\"]*\" { yylval.strv = strdup(yytext); return TEXTV; }
 --.*?## { yylval.str = strdup(yytext); return COMMENT; }
-{-([^-]|-[^}])*-} { yylval.str = strdup(yytext); return COMMENTM; }
-
-[ \t] {col++;}
-\n { nb_ligne++; col = 1; }
+\{-([^-]|-[^}])*-\} { 
+    char *p;
+    for (p = yytext; *p != '\0'; p++) {
+        if (*p == '\n') {
+            nb_ligne++;
+            col = 1;
+        } else {
+            col++;
+        }
+    }
+    yylval.str = strdup(yytext); 
+    return COMMENTM; 
+}
 
 . { 
     printf("Erreur lexicale sur l'entité %s à la ligne %d à la colonne %d\n", yytext, nb_ligne, col); 
