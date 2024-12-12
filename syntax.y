@@ -1,14 +1,11 @@
 %{
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include "ts1.h"
+#include "semantique.h"
 extern int yylex(void); 
 extern int nb_ligne;
 extern int col;
 extern void yyerror(const char *s);
-extern int yylineno;  
-extern char *yytext; 
+extern void afficherTStab(void) ;
+extern void afficherToutesLesTablesSymboles(void);
 
 %}
 %union {
@@ -35,7 +32,10 @@ extern char *yytext;
 %token <reel> cstflt    
 %token <entier> cstint  
 %token <str> idf       
-%token <strv> TEXTV   
+%token <str> TEXTV   
+%token COMMENT
+%token COMMENTM
+
 
 %token NUM REAL TEXT   
 
@@ -44,7 +44,7 @@ extern char *yytext;
 %type <symbol> var_list2
 %type <symbole> const_declaration
 %type <con> constant_value
-/* %type <con> expression */
+%type <con> expression
 
 %left OU
 %left ET
@@ -57,42 +57,24 @@ extern char *yytext;
 %%
     
 program:
-    DEBUT declarations EXECUTION block FIN
+    commantaires DEBUT declarations EXECUTION block FIN commantaires
     ;
 
 declarations:
-    declarations declaration
+    declarations commantaires declaration 
     | /* Epsilon */
     ;
-
+commantaires : 
+    commantaires commantaire
+    | /* Epsilon */
+commantaire :
+    COMMENT 
+    | COMMENTM
+    ;
 declaration:
-    type ':' var_list {
-        struct listeD *var;
-        for (var = $3; var != NULL; var = var->suivant) {
-            if(insererTS(var->entite, $1, 0,&(var->valeur))==-1)
-            {
-                printf("double déclarations de %s à la ligne %d et colonne %d \n",var->entite,nb_ligne,col);
-            }
-        }
-    } 
-    | type ':' var_list2 {
-        struct listeT *var;
-        for (var=$3 ; var != NULL; var=var->suivant){
-            if(insererTableau(var->entite,$1,var->taille,&(var->valeur))==-1)
-            {
-                printf("double déclarations de %s à la ligne %d et colonne %d \n",var->entite,nb_ligne,col);
-            }
-        }
-    }
-    | FIXE type ':' const_declaration {
-        listeD *var;
-        for (var = $4; var != NULL; var = var->suivant) {
-            if(insererTS(var->entite, $2,1,&(var->valeur))==-1)
-            {
-                printf("double déclarations de %s à la ligne %d et colonne %d \n",var->entite,nb_ligne,col);
-            }
-        }
-    }
+    type ':' var_list ';'{inserstionTS_et_verifications_double_declarations($3,$1,0);} 
+    | type ':' var_list2 ';'{inserstionTStab_et_verifications_double_declarations($3,$1);}
+    | FIXE type ':' const_declaration ';'{inserstionTS_et_verifications_double_declarations($4,$2,1);}
     ;
 
 type:
@@ -101,70 +83,16 @@ type:
     | TEXT { $$ = strdup("TEXT");}
     ;
 var_list:
-    var_list ',' idf {
-            struct listeD *new_var = (struct listeD*)malloc(sizeof(struct listeD)); 
-            strcpy(new_var->entite, $3);
-            new_var->is_const = 0;
-            new_var->suivant = $1;
-            $$ = new_var;
-    }
-    | idf {
-            struct listeD *new_var = (struct listeD*)malloc(sizeof(struct listeD));
-            strcpy(new_var->entite, $1);
-            new_var->is_const = 0; 
-            new_var->suivant = NULL; 
-            $$ = new_var;
-    }
+    var_list ',' idf {$$=creationVarlist1($3,$1);}
+    | idf {$$=creationVarlist1($1,NULL);}
 ;
 var_list2 :
-    var_list2 ',' idf '[' cstint ']' {
-            struct listeT *new_var = (struct listeT*)malloc(sizeof(struct listeT)); 
-            strcpy(new_var->entite, $3);
-            new_var->taille = $5;
-            new_var->suivant = $1;
-            $$ = new_var;
-    }
-    | idf '[' cstint ']' {
-            struct listeT *new_var = (struct listeT*)malloc(sizeof(struct listeT));
-            strcpy(new_var->entite, $1);
-            new_var->taille = $3;
-            new_var->suivant = NULL; 
-            $$ = new_var;
-    }
+    var_list2 ',' idf '[' cstint ']' {$$=creationVarlist2($3 ,$5 , $1);}
+    | idf '[' cstint ']' {$$=creationVarlist2($1 ,$3 , NULL);}
 
 const_declaration:
-    idf EQ constant_value
-    {
-        struct listeD *new_var = (struct listeD*)malloc(sizeof(struct listeD));
-            strcpy(new_var->entite, $1);
-                if (strcmp($3->type, "NUM") == 0) 
-                {
-                    new_var->valeur.i = $3->valeur.i; 
-                    strcpy(new_var->type, "NUM");  
-                }
-                else if (strcmp($3->type, "REAL") == 0) 
-                {
-                    new_var->valeur.f = $3->valeur.f; 
-                    strcpy(new_var->type, "REAL"); 
-                }       
-                else if (strcmp($3->type, "TEXT") == 0) 
-                {
-                    new_var->valeur.s = strdup($3->valeur.s);  
-                    strcpy(new_var->type, "TEXT"); 
-                }
-            new_var->is_const = 1; 
-            new_var->suivant = NULL;
-            free($3);
-            $$ = new_var;
-    }
-    | idf 
-    {
-            struct listeD *new_var = (struct listeD*)malloc(sizeof(struct listeD));
-            strcpy(new_var->entite, $1);
-            new_var->is_const = 1;
-            new_var->suivant = NULL;
-            $$ = new_var;
-    }
+    idf EQ constant_value{$$=constDeclaration($3,$1,1);}
+    | idf {$$=constDeclaration(NULL,$1,1);}
     ;
 
 
@@ -188,51 +116,35 @@ constant_value:
 
 
 block:
-    '{' statements '}'
+    '{' commantaires statements '}'
     ;
 
 statements:
-    statements statement
+    statements  statement commantaires
     | /* Epsilon */
     ;
 
 statement:
-    assignment 
+    assignment  ';'
     | conditional
     | loop
-    | io_statement
+    | io_statement';'
     ;
 assignment:
-    idf ASSIGN expression 
-    | idf ASSIGN cstint {
-        // Vérification de type à implémenter
-    }
-    | idf ASSIGN cstflt {
-        // Vérification de type à implémenter
-    }
-    | idf ASSIGN TEXTV
-    | idf '[' cstint ']' ASSIGN expression
-    ;
-
-division:
-    cstflt '/' cstflt {} 
-    | cstint '/' cstint {} 
-    | cstint '/' cstflt {} 
-    | cstflt '/' cstint {} 
-    | idf '/' idf 
+    idf ASSIGN expression {gestionErreurAssig($3,$1);}
+    | idf '[' cstint ']' ASSIGN expression {gestion_taille_tableau($1,$3);}
     ;
 
 expression:
-    expression '+' expression 
-    | expression '-' expression
-    | expression '*' expression
-    | division
-    | '(' expression ')'
-    | idf
-    | cstint
-    | cstflt
-    | idf '['cstint']'
-    ;
+    expression '+' expression {$$=gestionErreurType(1,$1,$3);}
+    | expression '-' expression {$$=gestionErreurType(2,$1,$3);}
+    | expression '*' expression {$$=gestionErreurType(3,$1,$3);}
+    | expression '/' expression {$$=gestionErreurType(4,$1,$3);}
+    | '(' expression ')' { $$ = $2; }
+    | constant_value {$$=$1}
+    | idf { $$=gestionIDF($1);}
+
+
 
 conditional:
     SI '(' condition ')' ALORS block SINON block
@@ -243,44 +155,41 @@ loop:
     ;
 
 condition:
-    expression '<' expression
-    | expression '>' expression
-    | expression LE expression
-    | expression GE expression
-    | expression EQ expression
-    | expression NEQ expression
+    expression '<' expression{gestionIncompatiblite($1,$3);}
+    | expression '>' expression{gestionIncompatiblite($1,$3);}
+    | expression LE expression{gestionIncompatiblite($1,$3);}
+    | expression GE expression{gestionIncompatiblite($1,$3);}
+    | expression EQ expression{gestionIcompatibilitéEQ_NEQ($1,$3);}
+    | expression NEQ expression{gestionIcompatibilitéEQ_NEQ($1,$3);}
     | condition ET condition
     | condition OU condition
     | NON condition
     ;
 
+
 io_statement:
     AFFICHE '(' io_args ')'
-    | LIRE '(' idf ')'
-    | LIRE '(' idf '['cstint']' ')' {
-    }
+    | LIRE '(' idf ')' {gestion_io_statemnt(0 ,$3,-1 );}
+    | LIRE '(' idf '['cstint']' ')' {gestion_io_statemnt(1,$3,$5 );}
     ;
 
 io_args:
     io_args ',' expression
     | expression 
-    | TEXTV
     ;
 
 %%
 void yyerror(const char *s) {
-    extern int yylineno;
-    extern char *yytext;
-    fprintf(stderr, "Erreur syntaxique à la ligne %d et colonne %d: %s près de \"%s\"\n", nb_ligne,col, s, yytext);
+    printf("\n\n\n%s : à la ligne %d et colonne %d\n ", s,nb_ligne,col);
 }
 
 int main() {
     if (yyparse() == 0) {  
-        printf("Analyse syntaxique réussie\n");
-        afficherTS();
-        afficherTStab();
+        printf("\n\nAnalyse syntaxique réussie\n\n");
+        /* afficherTS(); */
+        afficherToutesLesTablesSymboles();
     } else {  
-        printf("Erreur d'analyse syntaxique\n");
+        printf("\n\nErreur d'analyse syntaxique\n\n");
     }
     return 0;
 }
