@@ -3,9 +3,15 @@
 extern int yylex(void); 
 extern int nb_ligne;
 extern int col;
+extern int yynerrs;  
+extern char *yytext;
 extern void yyerror(const char *s);
 extern void afficherTStab(void) ;
 extern void afficherToutesLesTablesSymboles(void);
+#define RED     "\033[1;31m"  
+#define YELLOW  "\033[1;33m"  
+#define RESET   "\033[0m"  
+#define GREEN   "\033[0;32m"
 
 %}
 %union {
@@ -18,10 +24,14 @@ extern void afficherToutesLesTablesSymboles(void);
     struct constant *con;
 }
 %token DEBUT FIN EXECUTION FIXE
-%token SI ALORS SINON TANTQUE FAIRE AFFICHE LIRE
+%token SI ALORS SINON TANTQUE FAIRE AFFICHE LIRE 
+
+%error-verbose
+
 
 %token <str> ASSIGN
 %token <str> EQ
+%expect 2
 %token <str> NEQ
 %token <str> LE
 %token <str> GE
@@ -57,7 +67,7 @@ extern void afficherToutesLesTablesSymboles(void);
 %%
     
 program:
-    commantaires DEBUT declarations EXECUTION block FIN commantaires
+    commantaires DEBUT declarations commantaires EXECUTION block FIN commantaires
     ;
 
 declarations:
@@ -125,14 +135,16 @@ statements:
     ;
 
 statement:
-    assignment  ';'
+    assignment ';'   
     | conditional
     | loop
-    | io_statement';'
+    | io_statement ';'
     ;
+
 assignment:
     idf ASSIGN expression {gestionErreurAssig($3,$1);}
     | idf '[' cstint ']' ASSIGN expression {gestion_taille_tableau($1,$3);}
+    | idf '[' idf ']' ASSIGN expression {gererTaille($1,$3);}
     ;
 
 expression:
@@ -141,17 +153,19 @@ expression:
     | expression '*' expression {$$=gestionErreurType(3,$1,$3);}
     | expression '/' expression {$$=gestionErreurType(4,$1,$3);}
     | '(' expression ')' { $$ = $2; }
-    | constant_value {$$=$1}
+    | constant_value {$$=$1;}
     | idf { $$=gestionIDF($1);}
-
+    ;
 
 
 conditional:
     SI '(' condition ')' ALORS block SINON block
+    | SI '(' condition ')' ALORS block 
     ;
 
 loop:
     TANTQUE '(' condition ')' FAIRE block
+
     ;
 
 condition:
@@ -171,6 +185,7 @@ io_statement:
     AFFICHE '(' io_args ')'
     | LIRE '(' idf ')' {gestion_io_statemnt(0 ,$3,-1 );}
     | LIRE '(' idf '['cstint']' ')' {gestion_io_statemnt(1,$3,$5 );}
+    | LIRE '(' idf '['idf']' ')' {gererTaille($3,$5)}
     ;
 
 io_args:
@@ -180,16 +195,24 @@ io_args:
 
 %%
 void yyerror(const char *s) {
-    printf("\n\n\n%s : à la ligne %d et colonne %d\n ", s,nb_ligne,col);
+
+    if (strstr(s, "syntax error") || strstr(s, "Erreur Syntaxique")) {
+        printf("\n%sErreur syntaxique ligne %d, colonne %d: ", RED, nb_ligne, col);
+        printf("%s%s\n", s, RESET);
+    } else {
+        printf("\n%sErreur sémantique ligne %d, colonne %d: ", YELLOW, nb_ligne, col);
+        printf("%s%s\n", s, RESET);
+    }
 }
 
+
 int main() {
-    if (yyparse() == 0) {  
-        printf("\n\nAnalyse syntaxique réussie\n\n");
-        /* afficherTS(); */
+    int result = yyparse();
+    if (result == 0 && yynerrs == 0) {  
+        printf("\n\n%sAnalyse syntaxique réussie%s\n\n",GREEN,RESET);
         afficherToutesLesTablesSymboles();
     } else {  
-        printf("\n\nErreur d'analyse syntaxique\n\n");
+        printf("\n\nNombre total d'erreurs: %d\n\n", yynerrs);
     }
-    return 0;
+    return result;
 }

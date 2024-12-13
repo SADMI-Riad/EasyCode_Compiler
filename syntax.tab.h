@@ -62,9 +62,11 @@
      cstint = 278,
      idf = 279,
      TEXTV = 280,
-     NUM = 281,
-     REAL = 282,
-     TEXT = 283
+     COMMENT = 281,
+     COMMENTM = 282,
+     NUM = 283,
+     REAL = 284,
+     TEXT = 285
    };
 #endif
 /* Tokens.  */
@@ -91,24 +93,29 @@
 #define cstint 278
 #define idf 279
 #define TEXTV 280
-#define NUM 281
-#define REAL 282
-#define TEXT 283
+#define COMMENT 281
+#define COMMENTM 282
+#define NUM 283
+#define REAL 284
+#define TEXT 285
 
 
 
 
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 typedef union YYSTYPE
-#line 12 "syntax.y"
+#line 17 "syntax.y"
 {
     int entier; 
     float reel; 
     char *str; 
     char *strv;
+    struct listeD *symbole;
+    struct listeT *symbol;
+    struct constant *con;
 }
 /* Line 1529 of yacc.c.  */
-#line 112 "syntax.tab.h"
+#line 119 "syntax.tab.h"
 	YYSTYPE;
 # define yystype YYSTYPE /* obsolescent; will be withdrawn */
 # define YYSTYPE_IS_DECLARED 1

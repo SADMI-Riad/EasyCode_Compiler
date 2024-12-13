@@ -1,46 +1,88 @@
+{- Ce programme est un système de gestion d'une bibliothèque
+   Il permet de :
+   - Gérer les emprunts de livres
+   - Calculer les amendes pour retard
+   - Faire des statistiques sur les emprunts -}
+
 DEBUT
-NUM : age
-REAL : salaire
-FIXE NUM : MAX_AGE = 65
-FIXE NUM : MIN_AGE = 18
+-- Déclaration des variables numériques ##
+NUM : nbLivres, nbEmprunts, compteur1, compteur2, choix;
+NUM : amendes[100], statistiques[50];
+
+-- Déclaration des variables réelles ##
+REAL : montantTotal, tauxAmende;
+
+-- Définition des constantes ##
+FIXE NUM : MAX_EMPRUNTS = 100;
+FIXE NUM : MAX_JOURS = 15;
+FIXE REAL : AMENDE_JOUR = 2.5;
+
 EXECUTION {
-    affiche("Entrez votre âge :")
-    lire(age)
+    {- Initialisation des variables
+       et mise à zéro des compteurs -}
+    nbLivres <- 0;
+    nbEmprunts <- 0;
+    montantTotal <- 0;
     
-    SI (age < MIN_AGE) ALORS {
-        affiche("Vous êtes trop jeune pour travailler.")
-    }
-    SINON {
-        SI (age < MAX_AGE) ALORS {
-            affiche("Vous pouvez encore travailler.")
-            salaire <- 2000
-            affiche("Votre salaire estimé est : ", salaire)
+    -- Boucle principale du programme ##
+    TANTQUE (nbEmprunts < MAX_EMPRUNTS) FAIRE {
+        affiche("Menu principal:");
+        affiche("1. Nouvel emprunt");
+        affiche("2. Retour livre");
+        affiche("3. Calcul amendes");
+        affiche("4. Statistiques");
+        affiche("5. Quitter");
+        
+        lire(choix);
+        
+        SI (choix = 1) ALORS {
+            nbEmprunts <- nbEmprunts + 1;
+            affiche("Emprunt enregistré");
         }
         SINON {
-            affiche("Vous êtes en âge de retraite.")
-            salaire <- 1000
-            affiche("Votre pension estimée est : ", salaire)
+            SI (choix = 2) ALORS {
+                -- Gestion des retours ##
+                compteur1 <- 0;
+                TANTQUE (compteur1 < MAX_JOURS) FAIRE {
+                    SI (compteur1 > 15) ALORS {
+                        tauxAmende <- compteur1 * AMENDE_JOUR;
+                        amendes[nbEmprunts] <- tauxAmende;
+                    }
+                    compteur1 <- compteur1 + 1;
+                }
+            }
+            SINON {
+                SI (choix = 3) ALORS {
+                    -- Calcul du total des amendes ##
+                    compteur1 <- 0;
+                    TANTQUE (compteur1 < nbEmprunts) FAIRE {
+                        montantTotal <- montantTotal + 10000 ;
+                        compteur1 <- compteur1 + 1;
+                    }
+                    affiche("Total des amendes: ", montantTotal);
+                }
+                SINON {
+                    SI (choix = 4) ALORS {
+                        -- Calcul des statistiques ##
+                        compteur1 <- 0;
+                        TANTQUE (compteur1 < nbEmprunts) FAIRE {
+                            compteur2 <- 0;
+                            TANTQUE (compteur2 < 50) FAIRE {
+                                statistiques[compteur2] <- compteur1 + 1;
+                                compteur2 <- compteur2 + 1;
+                            }
+                            compteur1 <- compteur1 + 1;
+                        }
+                        affiche("Statistiques calculées");
+                    }
+                }
+            }
         }
     }
     
-    compteur <- 0
-    TANTQUE (compteur < 5) FAIRE {
-        affiche("Compteur TANTQUE : ", compteur)
-        
-        TANTQUE (compteur < 3) FAIRE {
-            affiche("Compteur interne : ", compteur)
-            compteur <- compteur + 1
-        }
-        
-        compteur <- compteur + 1
-    }
-    
-
-    SI (compteur >= 5) ALORS {
-        affiche("Le compteur a atteint ou dépassé 5.")
-    }
-    SINON {
-        affiche("Le compteur est inférieur à 5.")
-    }
+    {- Affichage des résultats finaux
+       et récapitulatif des opérations -}
+    affiche("Nombre total d'emprunts: ", nbEmprunts);
+    affiche("Montant total des amendes: ", montantTotal);
 }
 FIN

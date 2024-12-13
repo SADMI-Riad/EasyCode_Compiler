@@ -1,19 +1,73 @@
 DEBUT
-NUM : age
-REAL : salaire
-FIXE NUM : MAX_AGE = 65
+
+-- Declaration de Variable ##
+NUM : x , y , z , i ;
+REAL : a , b , c , div; -- REAL ##
+TEXT : text , new_text ; 
+
+-- double déclaration ##
+NUM : x ; 
+
+
+{-
+Déclaration des constantes 
+-}
+
+FIXE REAL : MATH_PI = 3.14 ;
+FIXE NUM : num = 3 ;
+FIXE TEXT : phrase = "ISIL B" ; 
+
+-- declarations des tableaux ## 
+NUM : tab[30] , tableau[10];
+
+-- 1 ere erreur lexical ## 
+{- NUM : Un_Long_Nom_De_Variable ; -} 
+
+
+
 EXECUTION {
-    affiche("Entrez votre âge :")
-    lire(age)
-    SI (age < MAX_AGE) ALORS {
-        affiche("Vous pouvez encore travailler.")
-    } SINON {
-        affiche("Vous êtes en âge de retraite.")
-    }
-    compteur <- 0
-    TANTQUE (compteur < 5) FAIRE {
-        affiche("Compteur TANTQUE : ", compteur)
-        compteur <- compteur + 1
-    }
+
+
+{-
+division par 0
+-}
+x <- 3 ; 
+y <- 2 * x ;
+z <- 3 ; 
+a <- 1.5 ;
+div <- a / ((x + y) - (3 * z)); -- on peut assigner un entier à un reel ##
+
+
+
+
+-- variable non déclaré + essaye de calcule un type text ##
+var <- text + y;
+
+
+{- depassement de capacité pour un tableau -}
+lire(tab[35]);
+tableau[13] <- x ; 
+-- d'autre erreur conserant les tableaux ##
+
+lire(tab[indice]);
+b <- 3.5 ; 
+tableau[b] <- b ;
+i <- 13 ; 
+lire(tableau[i]) ;
+
+-- icompatibilité des types ##
+x <- a ; 
+b <- text ; 
+
+text <- "Riad et Rayane" ; 
+new_text <- text ; -- affectation d'un type text à un autre marche sans probleme ##
+
+
+-- modification d'un constante ## 
+MATH_PI <- 4 ; 
+num <- num + 1 ; 
+
+
+
 }
 FIN

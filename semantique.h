@@ -51,7 +51,7 @@ void inserstionTS_et_verifications_double_declarations(listeD * i , char type[] 
         for (var = i; var != NULL; var = var->suivant) {
             if(insererTS(var->entite, type, 0,&(var->valeur))==-1)
             {
-                yyerror("Erreur Sémantique : Double déclaration");
+                yyerror("Double déclaration");
             }
         }
     }
@@ -61,7 +61,7 @@ void inserstionTS_et_verifications_double_declarations(listeD * i , char type[] 
         {
             if(insererTS(var->entite, type,1,&(var->valeur))==-1) 
             {
-                yyerror("Erreur Sémantique : Double déclaration");
+                yyerror("Double déclaration");
             }
         }
     }
@@ -72,7 +72,7 @@ void inserstionTStab_et_verifications_double_declarations(listeT * i , char type
     for (var=i ; var != NULL; var=var->suivant){
         if(insererTableau(var->entite,type,var->taille,&(var->valeur))==-1)
         {
-                yyerror("Erreur Sémantique : Double déclaration");
+                yyerror("Double déclaration");
         }
         }
 }
@@ -123,10 +123,10 @@ void gestionErreurAssig(constant *p,char tete[])
     struct listeD *var = chercherTS(tete);
     if (var == NULL) 
     {
-        yyerror("Erreur Sémantique : Variable non déclarée");
+        yyerror("Variable non déclarée");
     } else if (var->is_const == 1) 
     {
-        yyerror("Erreur Sémantique :Tentative de modification d'une constante");
+        yyerror("Tentative de modification d'une constante");
     } else 
     {
         if (strcmp(var->type, p->type) == 0) {
@@ -145,12 +145,18 @@ void gestionErreurAssig(constant *p,char tete[])
             {
                 if (strcmp(var->type, "NUM") == 0 && strcmp(p->type, "REAL") == 0) 
                 {
-                    yyerror("Erreur Sémantique  : Incompatibilité de types dans l'affectation");
+                    yyerror("Incompatibilité de types dans l'affectation");
                 } 
                 else if(strcmp(var->type, "REAL") == 0 && strcmp(p->type, "NUM") == 0) 
                 {
                     var->valeur.f = (float)p->valeur.i;
                 }
+                else if(
+                    (strcmp(var->type,"TEXT")==0 && (strcmp(p->type,"NUM")==0 || strcmp(p->type,"REAL")==0))
+                    || (strcmp(p->type,"TEXT")==0 && (strcmp(var->type,"NUM")==0 || strcmp(var->type,"REAL")==0)))
+                    {
+                        yyerror("Incompatibilité de types dans l'affectation à cause du type TEXT");
+                    }
             }
         }
         free(p);
@@ -161,10 +167,10 @@ void gestion_taille_tableau(char tete[] , int tailleT)
     int taille = rechercherTaille(tete);
     if(taille == -1) 
     {
-        yyerror("Erreur Sémantique :Variable non déclarée");
+        yyerror("Variable non déclarée");
     } else if(tailleT >= taille || tailleT < 0) 
     {
-        yyerror("Erreur Sémantique :Indice hors limites");
+        yyerror("Indice hors limites");
     }
 }
 struct constant *gestionErreurType(int i, constant *exp1, constant *exp2)
@@ -190,7 +196,7 @@ struct constant *gestionErreurType(int i, constant *exp1, constant *exp2)
                     else if (i == 3) var->valeur.i = exp1->valeur.i * exp2->valeur.i;
                     else if (i == 4) {
                         if (exp2->valeur.i == 0) {
-                            yyerror("Erreur Sémantique : Division par zéro");
+                            yyerror("Division par zéro");
                         }
                         else
                         {
@@ -206,7 +212,7 @@ struct constant *gestionErreurType(int i, constant *exp1, constant *exp2)
                     else if (i == 3) var->valeur.f = exp1->valeur.f * exp2->valeur.f;
                     else if (i == 4) {
                         if (exp2->valeur.f == 0.0) {
-                            yyerror("Erreur Sémantique : Division par zéro");
+                            yyerror("Division par zéro");
                         }
                         else
                         {
@@ -215,7 +221,7 @@ struct constant *gestionErreurType(int i, constant *exp1, constant *exp2)
                     }
                 }
                 else {
-                    yyerror("Erreur Sémantique : Opération non supportée pour le type TEXT");
+                    yyerror("Opération non supportée pour le type TEXT");
                 }
             } 
             else if ((strcmp(exp1->type, "NUM") == 0 && strcmp(exp2->type, "REAL") == 0) ||
@@ -229,7 +235,7 @@ struct constant *gestionErreurType(int i, constant *exp1, constant *exp2)
                 else if (i == 3) var->valeur.f = val1 * val2;
                 else if (i == 4) {
                     if (val2 == 0.0) {
-                        yyerror("Erreur Sémantique : Division par zéro");
+                        yyerror("Division par zéro");
                         return var;
                     }
                     else
@@ -238,30 +244,30 @@ struct constant *gestionErreurType(int i, constant *exp1, constant *exp2)
                     }
                 }
             } 
-            else {
-                yyerror("Erreur Sémantique : type incompatibles pour cette operation : type text ");
+            else if(strcmp(exp1->type,"TEXT")==0||strcmp(exp2->type,"TEXT")==0){
+                yyerror("Impossible de faire une operation sur une type TEXT ");
             }
             break;
         default:
-            yyerror("Erreur : Opération non reconnue");
+            yyerror("Opération non reconnue");
     }
     return var;
 }
 void gestionIncompatiblite(constant *exp1,constant *exp2)
 {
     if (exp1 == NULL || exp1 == NULL) {
-        yyerror("Erreur Sémantique : Expression invalide dans la condition");
+        yyerror("Expression invalide dans la condition");
     } else if ((strcmp(exp1->type, "TEXT") == 0 || strcmp(exp2->type, "TEXT") == 0) ||(strcmp(exp1->type, "TEXT") == 0 && strcmp(exp2->type, "TEXT") == 0))
         {
-            yyerror("Erreur Sémantique : Comparaison non supportée pour le type TEXT");
+            yyerror("Comparaison non supportée pour le type TEXT");
         }
 }
 void gestionIcompatibilitéEQ_NEQ(constant *exp1,constant *exp2)
 {
     if (exp1 == NULL || exp2 == NULL) {
-        yyerror("Erreur Sémantique : Expression invalide dans la condition");
+        yyerror("Expression invalide dans la condition");
     } else if (strcmp(exp1->type, exp2->type) != 0) {
-        yyerror("Erreur Sémantique : Types incompatibles pour la comparaison d'égalité");
+        yyerror("Types incompatibles pour la comparaison d'égalité");
     }
 }
 void gestion_io_statemnt(int i ,char tete[],int taille )
@@ -270,17 +276,17 @@ void gestion_io_statemnt(int i ,char tete[],int taille )
     {
         if(chercherTS(tete)==NULL)
         {
-            yyerror("Erreur Sémantique :Variable non déclarée");
+            yyerror("Variable non déclarée");
         }
     }
     if(i==1)
     {
         if(rechercherTaille(tete)==(-1)){
-            yyerror("Erreur Sémantique :Variable non déclarée");
+            yyerror("Variable non déclarée");
         }
         else if(rechercherTaille(tete)<taille)
         {
-            yyerror("Erreur Sémantique :Indice hors limites");
+            yyerror("Indice hors limites");
         }
     }
 }
@@ -289,7 +295,7 @@ struct constant *gestionIDF(char tete[])
         struct listeD *var = chercherTS(tete);
         struct constant *variable = (struct constant*)malloc(sizeof(struct constant));
         if(var == NULL) {
-            yyerror("Erreur Sémantique :Variable non déclarée");
+            yyerror("Variable non déclarée");
         } else {
             strcpy(variable->type, var->type);
             if (strcmp(var->type, "NUM") == 0) {
@@ -311,4 +317,20 @@ struct constant *gestionIDF(char tete[])
             }
         }
         return variable;
+}
+void gererTaille(char teteTableau[],char tete[])
+{
+    struct listeD*var = chercherTS(tete);
+    if(var == NULL)
+    {
+        yyerror("Indice du tableau non déclarée");
+    }
+    else if(strcmp(var->type,"NUM") != 0)
+    {
+        yyerror("Indice du tableau n'est pas de type entier");
+    }
+    else if(rechercherTaille(teteTableau)<var->valeur.i)
+    {
+        yyerror("Indice hors limite");
+    }
 }
