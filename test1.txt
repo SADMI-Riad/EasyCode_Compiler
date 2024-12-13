@@ -35,9 +35,15 @@ x <- 3 ;
 y <- 2 * x ;
 z <- 3 ; 
 a <- 1.5 ;
-div <- a / ((x + y) - (3 * z)); -- on peut assigner un entier à un reel ##
+div <- a / ((x + y) - (3 * z));
 
 
+a <- x ;  -- on peut assigner un entier à un reel ##
+
+
+
+-- 2eme erreur lexical ##
+{- x <- 400000 ; -}
 
 
 -- variable non déclaré + essaye de calcule un type text ##

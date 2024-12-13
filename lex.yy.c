@@ -864,7 +864,7 @@ case 8:
 YY_RULE_SETUP
 #line 45 "Lexical.l"
 { 
-    insererMotCle("lire"); 
+   insererMotCle("lire"); 
     return LIRE; 
 }
 	YY_BREAK
@@ -1076,7 +1076,7 @@ YY_RULE_SETUP
 { 
     yylval.entier = atoi(yytext);
     if (yylval.entier < -32767 || yylval.entier > 32767) {
-        printf("entier en dehors de cet intervalle [-32767, 32767]\n");
+       printf("\033[34mErreur lexicale : entier en dehors de cet intervalle [-32767, 32767]\033[0m\n");
         return -1;
     }
     return cstint;
@@ -1094,8 +1094,8 @@ case 40:
 YY_RULE_SETUP
 #line 156 "Lexical.l"
 { 
-    if (strlen(yytext) > 20) {
-        printf("Erreur lexicale : l'identifiant '%s' dépasse la limite de 10 caractères à la ligne %d, colonne %d\n", yytext, nb_ligne, col);
+    if (strlen(yytext) > 10) {
+        printf("\033[34mErreur lexicale : l'identifiant '%s' dépasse la limite de 10 caractères à la ligne %d, colonne %d\033[0m\n", yytext, nb_ligne, col);
         return -1; 
     } else {
         yylval.str = strdup(yytext);
