@@ -53,6 +53,36 @@ liste *ListeOperateurNoAsso = NULL;
 listeD *TS = NULL;
 listeT *TStab = NULL;
 
+void supprimerDoublons(liste **tete)
+{
+    liste *courant = *tete;
+    while (courant != NULL)
+    {
+        liste *predecesseur = courant;
+        liste *suivant = courant->suivant;
+
+        while (suivant != NULL)
+        {
+           
+            if (strcmp(courant->entite, suivant->entite) == 0)
+            {
+       
+                predecesseur->suivant = suivant->suivant;
+                free(suivant);
+                suivant = predecesseur->suivant;
+            }
+            else
+            {
+              
+                predecesseur = suivant;
+                suivant = suivant->suivant;
+            }
+        }
+
+        courant = courant->suivant;
+    }
+}
+
 int rechercherIdf(char entiteRecherchee[]) {
     listeD *current = TS; 
     while (current != NULL) {
@@ -248,7 +278,10 @@ void afficherToutesLesTablesSymboles() {
     printf("\n╔════════════════════════════════════════════════════════════════╗\n");
     printf("║                    Tables des Symboles                         ║\n");
     printf("╚════════════════════════════════════════════════════════════════╝\n\n");
-
+    supprimerDoublons(&ListeMotCle);
+    supprimerDoublons(&ListeOperateurLogique);
+    supprimerDoublons(&ListeOperateurArithmetique);
+    supprimerDoublons(&ListeOperateurNoAsso);
     afficherListe("Mots-clés", ListeMotCle);
     afficherListe("Opérateurs logiques", ListeOperateurLogique);
     afficherListe("Opérateurs arithmétiques", ListeOperateurArithmetique);
