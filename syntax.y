@@ -31,7 +31,6 @@ extern void afficherToutesLesTablesSymboles(void);
 
 %token <str> ASSIGN
 %token <str> EQ
-%expect 2
 %token <str> NEQ
 %token <str> LE
 %token <str> GE
@@ -75,12 +74,15 @@ declarations:
     | /* Epsilon */
     ;
 commantaires : 
-    commantaires commantaire
+    commantaire commantaires
     | /* Epsilon */
+    ;
+
 commantaire :
     COMMENT 
     | COMMENTM
     ;
+
 declaration:
     type ':' var_list ';'{inserstionTS_et_verifications_double_declarations($3,$1,0);} 
     | type ':' var_list2 ';'{inserstionTStab_et_verifications_double_declarations($3,$1);}
@@ -167,19 +169,32 @@ loop:
     TANTQUE '(' condition ')' FAIRE block
 
     ;
+condition: condition_or;
 
-condition:
+condition_or:
+    condition_or OU condition_and
+    | condition_and
+    ;
+
+condition_and:
+    condition_and ET condition_not
+    | condition_not
+    ;
+
+condition_not:
+    NON condition_not
+    | condition_comp
+    ;
+
+condition_comp:
     expression '<' expression{gestionIncompatiblite($1,$3);}
     | expression '>' expression{gestionIncompatiblite($1,$3);}
     | expression LE expression{gestionIncompatiblite($1,$3);}
     | expression GE expression{gestionIncompatiblite($1,$3);}
     | expression EQ expression{gestionIcompatibilitéEQ_NEQ($1,$3);}
     | expression NEQ expression{gestionIcompatibilitéEQ_NEQ($1,$3);}
-    | condition ET condition
-    | condition OU condition
-    | NON condition
+    | '(' condition ')'
     ;
-
 
 io_statement:
     AFFICHE '(' io_args ')'
